@@ -12,9 +12,9 @@ class Lecturer(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
 
-class Request(db.Model):
+class ClassRequest(db.Model):  # Renamed from 'Request' to avoid conflicts
     id = db.Column(db.Integer, primary_key=True)
-    lecturer_id = db.Column(db.Integer, db.ForeignKey('lecturer.id'), nullable=False)
+    lecturer_id = db.Column(db.Integer, db.ForeignKey('lecturer.id', ondelete='CASCADE'), nullable=False)
     unit_name = db.Column(db.String(100), nullable=False)
     student_count = db.Column(db.Integer, nullable=False)
     room_available = db.Column(db.Boolean, default=False)
@@ -24,7 +24,16 @@ class Request(db.Model):
 @app.route('/request/create', methods=['POST'])
 def create_request():
     data = request.json
-    new_request = Request(
+    required_fields = ['lecturer_id', 'unit_name', 'student_count', 'room_available']
+
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    lecturer = Lecturer.query.get(data['lecturer_id'])
+    if not lecturer:
+        return jsonify({"error": "Lecturer not found"}), 404
+
+    new_request = ClassRequest(
         lecturer_id=data['lecturer_id'],
         unit_name=data['unit_name'],
         student_count=data['student_count'],
@@ -34,27 +43,27 @@ def create_request():
     db.session.commit()
     return jsonify({"message": "Request submitted successfully"}), 201
 
-@app.route('/request/list', methods=['GET']) # function to list all requests
+@app.route('/request/list', methods=['GET'])
 def list_requests():
-    requests = Request.query.all()
+    requests = ClassRequest.query.all()
     result = [
         {"id": req.id, "unit_name": req.unit_name, "students": req.student_count, "room": req.room_available, "status": req.status}
         for req in requests
     ]
     return jsonify(result)
 
-@app.route('/request/approve/<int:id>', methods=['PATCH']) # function to approve the lecturers request
+@app.route('/request/approve/<int:id>', methods=['PATCH'])
 def approve_request(id):
-    req = Request.query.get(id)
+    req = ClassRequest.query.get(id)
     if not req:
         return jsonify({"message": "Request not found"}), 404
     req.status = 'Approved'
     db.session.commit()
     return jsonify({"message": "Request approved"})
 
-@app.route('/request/reject/<int:id>', methods=['PATCH']) # used to reject the lecturer's request
+@app.route('/request/reject/<int:id>', methods=['PATCH'])
 def reject_request(id):
-    req = Request.query.get(id)
+    req = ClassRequest.query.get(id)
     if not req:
         return jsonify({"message": "Request not found"}), 404
     req.status = 'Rejected'
@@ -62,6 +71,4 @@ def reject_request(id):
     return jsonify({"message": "Request rejected"})
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # if tables don't exist create them
     app.run(debug=True)
