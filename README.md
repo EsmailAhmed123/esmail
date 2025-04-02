@@ -58,9 +58,10 @@ python
 
 Then, run the following commands:
 ```python
-from app import db, Lecturer
+from app import db  # importing the database from the app file
 
 db.create_all()  # Ensures database tables exist
+
 
 new_lecturer = Lecturer(name="John Doe", email="johndoe@example.com")
 db.session.add(new_lecturer)
@@ -94,7 +95,10 @@ curl -X PATCH http://127.0.0.1:5000/request/approve/1
 ```bash
 curl -X PATCH http://127.0.0.1:5000/request/reject/1
 ```
-
+### **4️⃣ Delete a Request**
+```bash
+curl -X PATCH http://127.0.0.1:5000/request/delete/1
+```
 ---
 
 ## **Run the Flask App**
