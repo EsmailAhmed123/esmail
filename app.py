@@ -70,5 +70,9 @@ def reject_request(id):
     db.session.commit()
     return jsonify({"message": "Request rejected"})
 
+@app.route('/request/delete/<int:id>', methods=['PATCH', 'DELETE', 'GET']) # To delete the lecturers request
+def delete_request(id):
+    return jsonify({"message": f"Request {id} marked for deletion"}), 200
+
 if __name__ == '__main__':
     app.run(debug=True)
